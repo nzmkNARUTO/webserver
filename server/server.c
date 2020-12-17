@@ -76,6 +76,7 @@ void header(FILE *fp,char *content_type){
     fprintf(fp,"HTTP/1.0 200 OK\r\n");
     if(content_type)
         fprintf(fp,"Content-type:%s;charset=UTF-8\r\n",content_type);
+    fprintf(fp, "\r\n");
 }
 
 void doWrong(int fd){
@@ -108,13 +109,8 @@ int isExist(char* argument){
 }
 
 void doLs(char* argument,int fd){
-    //printf("Lsing ....\n");
     FILE * fp = fdopen(fd,"w");
-    char *content = "text/plain";
-    //fprintf(fp,"HTTP/1.0 404 Not Found\r\n");
-    //fprintf(fp,"Content-type:text/plain\r\n");
-    header(fp, content);
-    fprintf(fp,"\r\n");
+    header(fp, "text/plain");
     fflush(fp);
     dup2(fd,1);
     dup2(fd,2);
@@ -138,7 +134,6 @@ void doExe(char* argument,int fd){
     FILE * fp;
     fp = fdopen(fd,"w");
     header(fp,"text/plain");
-    //fprintf(fp,"text/plain\r\n");
     fflush(fp);
     dup2(fd,1);
     dup2(fd,2);
@@ -169,7 +164,6 @@ void doCat(char* argument,int fd){
     if(fp != NULL && fpfile != NULL)
     {
         header(fp,content);
-        fprintf(fp,"\r\n");
         while((c = getc(fpfile)) != EOF)
             putc(c,fp);
         fclose(fpfile);
