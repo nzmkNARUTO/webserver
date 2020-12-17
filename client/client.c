@@ -3,7 +3,9 @@
 #include <unistd.h>
 
 int main(){
-    int i = execl("/home/bill/webserver/server","/test.sh",NULL);
-    printf("%d\n",i);
+    int i = execl("test",NULL);
+    if(i < 0){
+        perror("error\n");
+    }
     return 0;
 }

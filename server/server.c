@@ -29,10 +29,11 @@ int main(){
         fp_in=fdopen(fd,"r");
         fgets(request,BUFSIZ,fp_in);
         printf("Reviced a request: %s",request);
-        //read(fp_in);
+        read_from(fp_in);
         processRequest(request, fd);
         close(fd);
     }
+    fclose(fp_in);
     close(sock);
     return 0;
 }
@@ -62,8 +63,8 @@ void processRequest(char* request, int fd){
     }else if(isDir(argument)){
         printf("List dir\n");
         doLs(argument,fd);
-    }else if(isSh(argument)){
-        printf("Run shell script\n");
+    }else if(isOut(argument)){
+        printf("Run program\n");
         doExe(argument, fd);
     }else{
         printf("cat\n");
@@ -74,16 +75,9 @@ void processRequest(char* request, int fd){
 void header(FILE *fp,char *content_type){
     fprintf(fp,"HTTP/1.0 200 OK\r\n");
     if(content_type)
-        fprintf(fp,"Content-type:%s\r\n",content_type);
+        fprintf(fp,"Content-type:%s;charset=UTF-8\r\n",content_type);
 }
 
-void welcome(int fd){
-    FILE * fp = fdopen(fd,"w");
-    fprintf(fp,"HTTP/1.0 501 Not Implemented\r\n");
-    fprintf(fp,"Content_type:text/plain\r\n");
-    fprintf(fp,"\r\n");
-    fclose(fp);
-}
 void doWrong(int fd){
     FILE * fp = fdopen(fd,"w");
     fprintf(fp,"HTTP/1.0 501 Not Implemented\r\n");
@@ -99,7 +93,6 @@ void do404(char* argument,int fd){
     fprintf(fp,"HTTP/1.0 404 Not Found\r\n");
     fprintf(fp,"Content_type:text/plain\r\n");
     fprintf(fp,"\r\n");
-
     fprintf(fp,"The item you requested:%s\r\n is not found \r\n",argument);
     fclose(fp);
 }
@@ -115,45 +108,49 @@ int isExist(char* argument){
 }
 
 void doLs(char* argument,int fd){
-    FILE * fp;
-    fp = fdopen(fd,"w");
-    fprintf(fp,"text/plain\r\n");
+    //printf("Lsing ....\n");
+    FILE * fp = fdopen(fd,"w");
+    char *content = "text/plain";
+    //fprintf(fp,"HTTP/1.0 404 Not Found\r\n");
+    //fprintf(fp,"Content-type:text/plain\r\n");
+    header(fp, content);
+    fprintf(fp,"\r\n");
     fflush(fp);
-
     dup2(fd,1);
     dup2(fd,2);
     close(fd);
-    execlp("ls","ls","-l",argument,NULL);
+    execl("/bin/ls","ls","-l",argument,NULL);
     perror(argument);
 }
 
-char * fileType(char* argument){
+char *fileType(char* argument){
     char * cp;
     if((cp = strrchr(argument,'.')) != NULL)
         return cp+1;
     return "";
 }
 
-int isSh(char* argument){
-    return (strcmp(fileType(argument),"sh") == 0);
+int isOut(char* argument){
+    return (strcmp(fileType(argument),"out") == 0);
 }
 
 void doExe(char* argument,int fd){
     FILE * fp;
     fp = fdopen(fd,"w");
-    header(fp,NULL);
+    header(fp,"text/plain");
+    //fprintf(fp,"text/plain\r\n");
     fflush(fp);
     dup2(fd,1);
     dup2(fd,2);
     close(fd);
-    execl("/home/bill/webserver/server",argument,NULL);
+    execl(argument,NULL);
     perror(argument);
 }
 
 void doCat(char* argument,int fd){
     char * extension = fileType(argument);
     char * content = "text/plain";
-    FILE * fpsock, * fpfile;
+    FILE * fp, * fpfile;
     int c;
 
     if(strcmp(extension,"html") == 0 )
@@ -164,16 +161,18 @@ void doCat(char* argument,int fd){
         content = "text/jpeg";
     else if(strcmp(extension,"jpeg") == 0)
         content = "text/jpeg";
+    else if(strcmp(extension,"ico") == 0)
+        content = "image/x-icon";
 
-    fpsock = fdopen(fd,"w");
+    fp = fdopen(fd,"w");
     fpfile = fopen(argument,"r");
-    if(fpsock != NULL && fpfile != NULL)
+    if(fp != NULL && fpfile != NULL)
     {
-        header(fpsock,content);
-        fprintf(fpsock,"\r\n");
+        header(fp,content);
+        fprintf(fp,"\r\n");
         while((c = getc(fpfile)) != EOF)
-            putc(c,fpsock);
+            putc(c,fp);
         fclose(fpfile);
-        fclose(fpsock);
+        fclose(fp);
     }
 }
