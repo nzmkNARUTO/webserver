@@ -1,17 +1,57 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 
 #include "server.h"
 #include "socket.h"
 
-int main(){
+int main(int argc, char **argv){
+    int port = PORT;//8888 by default
+    if(argc == 1){
+        printf("Server will run in port 8888 by default\n");
+    }else{
+        int c;
+        int index;
+        while(1){
+            c = getopt_long(argc, argv, "hp:", opts, &index);//get options
+            if(c < 0)
+                break;
+            switch (c)
+            {
+            case 0:
+                switch(index){
+                    case 1:
+                        port = atoi(optarg);
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            case 'p':
+                port = atoi(optarg);
+                break;
+            case 'h':
+            default:
+                printf("DISCRIPTION:\n");
+                printf("\ta tiny web server only provide limit GET service\n");
+                printf("\tthe server will run in port 8888 by default\n");
+                printf("USAGE:\n");
+                printf("\tserver [ -p | --port]( port )\n");
+                printf("\t-p , --port (port)\n");
+                printf("\t\tYou can chose a available port\n");
+                printf("\t\tNotice that if you want to use a port below 2000\n");
+                printf("\t\tyou may need a sudo privilege\n");
+                exit(0);
+                break;
+            }
+        }
+    }
+
     int sock, fd;
     FILE *fp_in;
-    sock = makeServerSocket(PORT);
+    sock = makeServerSocket(port);//make a socket
     if(sock == -1)
         return -1;
     while (1)
@@ -24,13 +64,12 @@ int main(){
             break;
         }
         printf("Connect accept!\n");
-        //welcome(fd);
 
         fp_in=fdopen(fd,"r");
         fgets(request,BUFSIZ,fp_in);
         printf("Reviced a request: %s",request);
         read_from(fp_in);
-        processRequest(request, fd);
+        processRequest(request, fd);//process request
         close(fd);
     }
     fclose(fp_in);
@@ -46,9 +85,11 @@ void read_from(FILE *fp)
 
 void processRequest(char* request, int fd){
     char command[BUFSIZ], argument[BUFSIZ];
-    if(fork() != 0)
+
+    if(fork() != 0)//create a subprocess
         return;
-    strcpy(argument, "./");
+
+    strcpy(argument, "./");//add ./ before argument to make it work in current dir
     if(sscanf(request, "%s%s", command, argument+2) != 2){
         perror("Wrong request");
         return;
@@ -113,7 +154,7 @@ void doLs(char* argument,int fd){
     header(fp, "text/plain");
     fflush(fp);
     dup2(fd,1);
-    dup2(fd,2);
+    dup2(fd,2);//redirect stdout and stderr to fd
     close(fd);
     execl("/bin/ls","ls","-l",argument,NULL);
     perror(argument);

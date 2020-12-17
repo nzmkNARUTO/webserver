@@ -13,7 +13,7 @@ int makeServerSocket(int port){
     struct sockaddr_in serveraddr;
 
     //create sock
-    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+    if((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0){//use tcp protocol
         perror("Creat socket error\n");
         return -1;
     }
@@ -26,7 +26,7 @@ int makeServerSocket(int port){
 
     memset(&serveraddr, 0, sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
-    serveraddr.sin_addr.s_addr = htons(INADDR_ANY);
+    serveraddr.sin_addr.s_addr = htons(INADDR_ANY);//use any address belonging to this machine
     serveraddr.sin_port = htons((unsigned short)port);
 
     //bind a socket to a port
