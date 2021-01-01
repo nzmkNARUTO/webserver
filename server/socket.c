@@ -36,7 +36,7 @@ int makeServerSocket(int port){
     }
 
     //listen a socket
-    if(listen(sock, LISTENQ) <0 ){
+    if(listen(sock, LISTENQ) < 0){
         perror("Listen error\n");
         return -1;
     }

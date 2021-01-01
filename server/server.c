@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 
@@ -48,7 +49,7 @@ int main(int argc, char **argv){
             }
         }
     }
-
+    printf("The server is running on port: %d\n", port);
     int sock, fd;
     FILE *fp_in;
     sock = makeServerSocket(port);//make a socket
@@ -68,7 +69,9 @@ int main(int argc, char **argv){
         fp_in=fdopen(fd,"r");
         fgets(request,BUFSIZ,fp_in);
         printf("Reviced a request: %s",request);
-        read_from(fp_in);
+        logStatus("Request: ");
+        logStatus(request);
+        readFrom(fp_in);
         processRequest(request, fd);//process request
         close(fd);
     }
@@ -77,13 +80,15 @@ int main(int argc, char **argv){
     return 0;
 }
 
-void read_from(FILE *fp)
+void readFrom(FILE *fp)
 {
     char buf[BUFSIZ];
     while(fgets(buf,BUFSIZ,fp)!=NULL&&strcmp(buf,"\r\n")!=0);
 }
 
 void processRequest(char* request, int fd){
+    signal(SIGCHLD, SIG_IGN);//let kernel to manage zombie process
+
     char command[BUFSIZ], argument[BUFSIZ];
 
     if(fork() != 0)//create a subprocess
@@ -92,6 +97,7 @@ void processRequest(char* request, int fd){
     strcpy(argument, "./");//add ./ before argument to make it work in current dir
     if(sscanf(request, "%s%s", command, argument+2) != 2){
         perror("Wrong request");
+        logStatus("wrong request\n");
         return;
     }
 
@@ -115,6 +121,7 @@ void processRequest(char* request, int fd){
 
 void header(FILE *fp,char *content_type){
     fprintf(fp,"HTTP/1.0 200 OK\r\n");
+    logStatus("HTTP/1.0 200 OK\r\n");
     if(content_type)
         fprintf(fp,"Content-type:%s;charset=UTF-8\r\n",content_type);
     fprintf(fp, "\r\n");
@@ -123,6 +130,7 @@ void header(FILE *fp,char *content_type){
 void doWrong(int fd){
     FILE * fp = fdopen(fd,"w");
     fprintf(fp,"HTTP/1.0 501 Not Implemented\r\n");
+    logStatus("HTTP/1.0 501 Not Implemented\r\n");
     fprintf(fp,"Content_type:text/plain\r\n");
     fprintf(fp,"\r\n");
 
@@ -133,6 +141,7 @@ void doWrong(int fd){
 void do404(char* argument,int fd){
     FILE * fp = fdopen(fd,"w");
     fprintf(fp,"HTTP/1.0 404 Not Found\r\n");
+    logStatus("HTTP/1.0 404 Not Found\r\n");
     fprintf(fp,"Content_type:text/plain\r\n");
     fprintf(fp,"\r\n");
     fprintf(fp,"The item you requested:%s\r\n is not found \r\n",argument);
@@ -210,4 +219,10 @@ void doCat(char* argument,int fd){
         fclose(fpfile);
         fclose(fp);
     }
+}
+
+void logStatus(char *str){
+    FILE *f = fopen("log.txt", "a");
+    fprintf(f, str);
+    fclose(f);
 }

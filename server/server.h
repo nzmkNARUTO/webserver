@@ -101,5 +101,6 @@ char * fileType(char* argument);
  * 
  * @param fp file
  */
-void read_from(FILE *fp);
+void readFrom(FILE *fp);
 
+void logStatus(char *str);
