@@ -1,13 +1,16 @@
 {
     "files.associations": {
-        "cmath": "cpp",
-        "cstdarg": "cpp",
-        "cstdio": "cpp",
-        "cstdlib": "cpp",
-        "type_traits": "cpp",
-        "limits": "cpp",
-        "*.tcc": "cpp",
-        "cstdint": "cpp",
-        "typeinfo": "cpp"
+        "cmath": "c",
+        "cstdarg": "c",
+        "cstdio": "c",
+        "cstdlib": "c",
+        "cwchar": "c",
+        "type_traits": "c",
+        "limits": "c",
+        "*.tcc": "c",
+        "cinttypes": "c",
+        "cstdbool": "c",
+        "cstdint": "c",
+        "typeinfo": "c"
     }
 }
